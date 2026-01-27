@@ -12,16 +12,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        device: [oneplus_15, oneplus_15r, oneplus_13, oneplus_12]
         variant: [GLO, EU, NA, IN]
         include:
-          - variant: GLO
-            region_code: GLO
-          - variant: EU
-            region_code: EU
-          - variant: NA
-            region_code: NA
-          - variant: IN
-            region_code: IN
+          - device: oneplus_15
+            device_short: "15"
+            device_name: "OnePlus 15"
+          - device: oneplus_15r
+            device_short: "15R"
+            device_name: "OnePlus 15R"
+          - device: oneplus_13
+            device_short: "13"
+            device_name: "OnePlus 13"
+          - device: oneplus_12
+            device_short: "12"
+            device_name: "OnePlus 12"
 
     steps:
       - name: Checkout Repo
@@ -49,17 +54,20 @@ jobs:
       - name: Get Firmware Details
         id: get_details
         run: |
-          # Fetch URL and Version dynamically based on region code
-          REGION="${{ matrix.region_code }}"
-          DOWNLOAD_URL=$(curl -s "https://oosdownloader-gui.fly.dev/api/oneplus/oneplus_15/${REGION}/full")
-          VERSION=$(curl -s "https://oosdownloader-gui.fly.dev/api/oneplus/oneplus_15/${REGION}/full/version")
+          # Fetch URL and Version dynamically based on device and region
+          DEVICE="${{ matrix.device }}"
+          REGION="${{ matrix.variant }}"
+          DOWNLOAD_URL=$(curl -s "https://oosdownloader-gui.fly.dev/api/oneplus/${DEVICE}/${REGION}/full")
+          VERSION=$(curl -s "https://oosdownloader-gui.fly.dev/api/oneplus/${DEVICE}/${REGION}/full/version")
           
+          echo "Device: ${{ matrix.device_name }}"
           echo "Variant: ${{ matrix.variant }}"
           echo "Latest Firmware URL: $DOWNLOAD_URL"
           echo "Latest Firmware Version: $VERSION"
           
           echo "url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "device_short=${{ matrix.device_short }}" >> $GITHUB_OUTPUT
 
       - name: Cache ARB Check
         id: cache-arb
@@ -68,8 +76,8 @@ jobs:
           path: |
             arb_check_done.txt
             extracted/
-          # Cache key includes variant to be separate
-          key: arb-check-v5-${{ matrix.variant }}-${{ steps.get_details.outputs.version }}
+          # Cache key includes device and variant to be separate
+          key: arb-check-v5-${{ matrix.device }}-${{ matrix.variant }}-${{ steps.get_details.outputs.version }}
 
       - name: Download Firmware
         if: steps.cache-arb.outputs.cache-hit != 'true'
@@ -102,6 +110,7 @@ jobs:
           # Prepare result for artifact
           # We write a simple JSON or key-value file
           echo "{" > result.json
+          echo "\"device_short\": \"${{ steps.get_details.outputs.device_short }}\"," >> result.json
           echo "\"variant\": \"${{ matrix.variant }}\"," >> result.json
           echo "\"version\": \"${{ steps.get_details.outputs.version }}\"," >> result.json
           echo "\"arb_index\": \"$ARB_INDEX\"," >> result.json
@@ -114,7 +123,7 @@ jobs:
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: result-${{ matrix.variant }}
+          name: result-${{ matrix.device }}-${{ matrix.variant }}
           path: result.json
 
       - name: Cleanup
@@ -157,7 +166,7 @@ jobs:
               return text
 
           # Process all result files
-          # Artifacts download structure: artifacts/result-GLO/result.json
+          # Artifacts download structure: artifacts/result-oneplus_15-GLO/result.json
           base_dir = 'artifacts'
           for item in os.listdir(base_dir):
               variant_dir = os.path.join(base_dir, item)
@@ -167,6 +176,7 @@ jobs:
                       with open(result_file, 'r') as f:
                           data = json.load(f)
                       
+                      device_short = data.get('device_short') # e.g., 15, 15R, 13, 12
                       variant = data.get('variant') # e.g., GLO
                       version = data.get('version')
                       arb_index = data.get('arb_index', '-').strip()
@@ -175,14 +185,15 @@ jobs:
                       
                       status_icon = '✅' if arb_index == '0' else '❌'
                       
-                      # Replace placeholders with variant suffix
-                      # e.g. VERSION_START_GLO
-                      content = replace_block(content, f'<!-- VERSION_START_{variant} -->', f'<!-- VERSION_END_{variant} -->', version)
-                      content = replace_block(content, f'<!-- ARB_START_{variant} -->', f'<!-- ARB_END_{variant} -->', arb_index)
-                      content = replace_block(content, f'<!-- MAJOR_START_{variant} -->', f'<!-- MAJOR_END_{variant} -->', major)
-                      content = replace_block(content, f'<!-- MINOR_START_{variant} -->', f'<!-- MINOR_END_{variant} -->', minor)
-                      content = replace_block(content, f'<!-- DATE_START_{variant} -->', f'<!-- DATE_END_{variant} -->', today)
-                      content = replace_block(content, f'<!-- STATUS_START_{variant} -->', f'<!-- STATUS_END_{variant} -->', status_icon)
+                      # Replace placeholders with device_variant suffix
+                      # e.g. VERSION_START_15_GLO
+                      placeholder_suffix = f'{device_short}_{variant}'
+                      content = replace_block(content, f'<!-- VERSION_START_{placeholder_suffix} -->', f'<!-- VERSION_END_{placeholder_suffix} -->', version)
+                      content = replace_block(content, f'<!-- ARB_START_{placeholder_suffix} -->', f'<!-- ARB_END_{placeholder_suffix} -->', arb_index)
+                      content = replace_block(content, f'<!-- MAJOR_START_{placeholder_suffix} -->', f'<!-- MAJOR_END_{placeholder_suffix} -->', major)
+                      content = replace_block(content, f'<!-- MINOR_START_{placeholder_suffix} -->', f'<!-- MINOR_END_{placeholder_suffix} -->', minor)
+                      content = replace_block(content, f'<!-- DATE_START_{placeholder_suffix} -->', f'<!-- DATE_END_{placeholder_suffix} -->', today)
+                      content = replace_block(content, f'<!-- STATUS_START_{placeholder_suffix} -->', f'<!-- STATUS_END_{placeholder_suffix} -->', status_icon)
 
           with open(readme_path, 'w') as f:
               f.write(content)

@@ -13,7 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         device: [oneplus_15, oneplus_15r, oneplus_13, oneplus_12]
-        variant: [GLO, EU, IN]
+        variant: [GLO, EU, IN, CN]
+        exclude:
+          - device: oneplus_15r
+            variant: CN
         include:
           - device: oneplus_15
             device_short: "15"
@@ -30,12 +33,13 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y aria2 unzip curl
+          sudo apt-get install -y aria2 unzip curl python3-pip
+          pip3 install requests beautifulsoup4 --break-system-packages || pip3 install requests beautifulsoup4
 
       - name: Setup Tools
         run: |
@@ -51,80 +55,165 @@ jobs:
           find tools -name "payload-dumper-go" -type f -exec mv {} tools/payload-dumper \;
           chmod +x tools/payload-dumper
 
+      - name: Download Firmware History (INI)
+        # Only needed for CN fallback in previous logic, but spring mapping relies on it?
+        # fetch_firmware.py handles springer internally now without needing the INI file downloaded beforehand?
+        # Actually fetch_firmware.py logic scrapes the site directly. parse_ini.py uses local file. 
+        # The new fetch_firmware.py logic does NOT use parse_ini.py or the INI file. It scrapes.
+        # So we might not need this step for fetching! 
+        # But let's keep it if we want to sync the INI? No, we are building JSON history.
+        # I'll comment it out or remove it.
+        run: |
+          echo "Skipping INI download - using live scrape via fetch_firmware.py"
+
       - name: Get Firmware Details
         id: get_details
         run: |
-          # Fetch URL and Version dynamically based on device and region
-          DEVICE="${{ matrix.device }}"
-          REGION="${{ matrix.variant }}"
-          DOWNLOAD_URL=$(curl -s "https://oosdownloader-gui.fly.dev/api/oneplus/${DEVICE}/${REGION}/full")
-          VERSION=$(curl -s "https://oosdownloader-gui.fly.dev/api/oneplus/${DEVICE}/${REGION}/full/version")
+          # Unified fetching logic using fetch_firmware.py
+          # It handles OOS API priority and Springer fallback
+          
+          echo "Fetching details for ${{ matrix.device }} ${{ matrix.variant }}..."
+          
+          # Use --output file to avoid log contamination in stdout
+          python3 fetch_firmware.py "${{ matrix.device }}" "${{ matrix.variant }}" --output fw_info.json
+          
+          if [ ! -f fw_info.json ]; then
+             echo "Failed to fetch firmware details (no output file)"
+             exit 1
+          fi
+          
+          URL=$(python3 -c "import sys, json; print(json.load(open('fw_info.json'))['url'])")
+          VERSION=$(python3 -c "import sys, json; print(json.load(open('fw_info.json'))['version'])")
           
           echo "Device: ${{ matrix.device_name }}"
           echo "Variant: ${{ matrix.variant }}"
-          echo "Latest Firmware URL: $DOWNLOAD_URL"
+          echo "Latest Firmware URL: $URL"
           echo "Latest Firmware Version: $VERSION"
           
-          echo "url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "device_short=${{ matrix.device_short }}" >> $GITHUB_OUTPUT
 
-      - name: Cache ARB Check
+      - name: Restore ARB Cache
         id: cache-arb
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             arb_check_done.txt
             extracted/
           # Cache key includes device and variant to be separate
-          key: arb-check-v5-${{ matrix.device }}-${{ matrix.variant }}-${{ steps.get_details.outputs.version }}
+          key: arb-check-v6-${{ matrix.device }}-${{ matrix.variant }}-${{ steps.get_details.outputs.version }}
 
       - name: Download Firmware
         if: steps.cache-arb.outputs.cache-hit != 'true'
         run: |
-          aria2c -x16 -s16 -k1M -o firmware.zip "${{ steps.get_details.outputs.url }}"
-
-      - name: Extract xbl_config.img
-        if: steps.cache-arb.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p extracted
-          ./tools/payload-dumper -p xbl_config -o extracted firmware.zip
-          ls -lh extracted/
-
-      - name: Check ARB
-        id: check_arb
-        run: |
-          IMG_FILE=$(find extracted -name "*xbl_config*.img" | head -n 1)
-          if [ -z "$IMG_FILE" ]; then
-            echo "Error: xbl_config image not found!"
-            exit 1
+          URL="${{ steps.get_details.outputs.url }}"
+          
+          if [[ "${{ matrix.variant }}" == "CN" ]]; then
+            echo "Downloading CN firmware with robust retry loop..."
+            
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+            SUCCESS=0
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              echo "Attempting download (Try $((RETRY_COUNT+1))/$MAX_RETRIES)..."
+              echo "URL: $URL"
+              
+              # Use -c to continue. Increased concurrency to -x16 -s16 as requested for speed.
+              if aria2c -c -x16 -s16 -k1M -o firmware.zip "$URL"; then
+                echo "Download successful!"
+                SUCCESS=1
+                break
+              fi
+              
+              echo "Download failed. Refreshing signed URL..."
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              
+              if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                echo "Max retries reached."
+                break
+              fi
+              
+              # Refresh URL for the SPECIFIC version we started with
+              # We use 'fw_refresh.json' to distinct from original 'fw_info.json'
+              python3 fetch_firmware.py "${{ matrix.device }}" "${{ matrix.variant }}" "$VERSION" --output fw_refresh.json
+              
+              if [ -f fw_refresh.json ]; then
+                 NEW_URL=$(python3 -c "import sys, json; print(json.load(open('fw_refresh.json'))['url'])")
+                 if [[ "$NEW_URL" != "" && "$NEW_URL" != "null" ]]; then
+                    URL="$NEW_URL"
+                    echo "Refreshed URL successfully."
+                 else
+                    echo "Failed to extract new URL from refresh output."
+                 fi
+              else
+                 echo "Failed to refresh URL (script failed)."
+                 cat fw_refresh.json || echo "No stderr output captured."
+              fi
+              
+              # Small delay before retry
+              sleep 5
+            done
+            
+            if [ $SUCCESS -eq 0 ]; then
+               echo "Download failed after all attempts."
+               touch skip_check.txt
+            fi
+            
+          elif [[ "$URL" == *".zip"* ]]; then
+            echo "Downloading ZIP firmware..."
+            aria2c -x16 -s16 -k1M -o firmware.zip "$URL" || touch skip_check.txt
+          else
+            echo "Skipping non-direct download link: $URL"
+            touch skip_check.txt
           fi
+
+      - name: Analyze Firmware (Check ARB)
+        if: steps.cache-arb.outputs.cache-hit != 'true' && hashFiles('skip_check.txt') == ''
+        run: |
+          # Use the new standalone script
+          python3 analyze_firmware.py firmware.zip --tools-dir tools --output-dir extracted --json > result.json
           
-          OUTPUT=$(./tools/arbextract "$IMG_FILE")
-          ARB_INDEX=$(echo "$OUTPUT" | grep "ARB (Anti-Rollback)" | awk -F': ' '{print $2}')
-          MAJOR_VERSION=$(echo "$OUTPUT" | grep "Major Version" | awk -F': ' '{print $2}')
-          MINOR_VERSION=$(echo "$OUTPUT" | grep "Minor Version" | awk -F': ' '{print $2}')
-          
-          echo "ARB Index: $ARB_INDEX"
-          
-          # Prepare result for artifact
-          # We write a simple JSON or key-value file
-          echo "{" > result.json
-          echo "\"device_short\": \"${{ steps.get_details.outputs.device_short }}\"," >> result.json
-          echo "\"variant\": \"${{ matrix.variant }}\"," >> result.json
-          echo "\"version\": \"${{ steps.get_details.outputs.version }}\"," >> result.json
-          echo "\"arb_index\": \"$ARB_INDEX\"," >> result.json
-          echo "\"major\": \"$MAJOR_VERSION\"," >> result.json
-          echo "\"minor\": \"$MINOR_VERSION\"" >> result.json
-          echo "}" >> result.json
+          # Inject extra metadata into result.json for update_history.py
+          # (We could have passed these to analyze_firmware.py, but it's pure analysis)
+          # Let's just use jq or python to merge? Or just pass arguments to update_history.py explicitly
+          # Update: update_history.py accepts --json-file and missing args separate.
+          # We need to make sure result.json has device_short, variant, version if we assume --json-file provides all.
+          # But analyze_firmware.py only outputs ARB info.
+          # So we will pass the rest as args.
           
           cat result.json
+
+      - name: Update JSON History (Current Version)
+        if: hashFiles('result.json') != ''
+        run: |
+          python3 update_history.py \
+            "${{ steps.get_details.outputs.device_short }}" \
+            "${{ matrix.variant }}" \
+            "${{ steps.get_details.outputs.version }}" \
+            --json-file result.json
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: result-${{ matrix.device }}-${{ matrix.variant }}
           path: result.json
+      
+      - name: Save ARB Cache
+        if: steps.cache-arb.outputs.cache-hit != 'true' && hashFiles('extracted/xbl_config.img') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            arb_check_done.txt
+            extracted/
+          key: arb-check-v6-${{ matrix.device }}-${{ matrix.variant }}-${{ steps.get_details.outputs.version }}
+
+      - name: Upload JSON History
+        uses: actions/upload-artifact@v4
+        with:
+          name: history-${{ matrix.device }}-${{ matrix.variant }}
+          path: data/history/${{ steps.get_details.outputs.device_short }}_${{ matrix.variant }}.json
 
       - name: Cleanup
         if: always()
@@ -137,74 +226,31 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Download Artifacts
+      - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          merge-multiple: false # Keep folder structure result-VARIANT/result.json
-
-      - name: Update README
+          merge-multiple: false
+      
+      - name: Restore History & Generate README
         run: |
-          ls -R artifacts/
+          mkdir -p data/history
           
-          cat << EOF > update_readme.py
-          import os
-          import json
-          import datetime
-
-          readme_path = 'README.md'
-          today = datetime.date.today().strftime('%Y-%m-%d')
+          # Restore JSONs
+          find artifacts -name 'history-*' -type d | while read dir; do
+            JSON_FILE=$(find "$dir" -name '*.json' | head -n 1)
+            if [ -f "$JSON_FILE" ]; then
+              cp "$JSON_FILE" data/history/
+            fi
+          done
           
-          with open(readme_path, 'r') as f:
-              content = f.read()
-
-          def replace_block(text, start_marker, end_marker, new_content):
-              start_idx = text.find(start_marker)
-              end_idx = text.find(end_marker)
-              if start_idx != -1 and end_idx != -1:
-                  return text[:start_idx + len(start_marker)] + new_content + text[end_idx:]
-              return text
-
-          # Process all result files
-          # Artifacts download structure: artifacts/result-oneplus_15-GLO/result.json
-          base_dir = 'artifacts'
-          for item in os.listdir(base_dir):
-              variant_dir = os.path.join(base_dir, item)
-              if os.path.isdir(variant_dir) and item.startswith('result-'):
-                  result_file = os.path.join(variant_dir, 'result.json')
-                  if os.path.exists(result_file):
-                      with open(result_file, 'r') as f:
-                          data = json.load(f)
-                      
-                      device_short = data.get('device_short') # e.g., 15, 15R, 13, 12
-                      variant = data.get('variant') # e.g., GLO
-                      version = data.get('version')
-                      arb_index = data.get('arb_index', '-').strip()
-                      major = data.get('major', '-').strip()
-                      minor = data.get('minor', '-').strip()
-                      
-                      status_icon = '✅' if arb_index == '0' else '❌'
-                      
-                      # Replace placeholders with device_variant suffix
-                      # e.g. VERSION_START_15_GLO
-                      placeholder_suffix = f'{device_short}_{variant}'
-                      content = replace_block(content, f'<!-- VERSION_START_{placeholder_suffix} -->', f'<!-- VERSION_END_{placeholder_suffix} -->', version)
-                      content = replace_block(content, f'<!-- ARB_START_{placeholder_suffix} -->', f'<!-- ARB_END_{placeholder_suffix} -->', arb_index)
-                      content = replace_block(content, f'<!-- MAJOR_START_{placeholder_suffix} -->', f'<!-- MAJOR_END_{placeholder_suffix} -->', major)
-                      content = replace_block(content, f'<!-- MINOR_START_{placeholder_suffix} -->', f'<!-- MINOR_END_{placeholder_suffix} -->', minor)
-                      content = replace_block(content, f'<!-- DATE_START_{placeholder_suffix} -->', f'<!-- DATE_END_{placeholder_suffix} -->', today)
-                      content = replace_block(content, f'<!-- STATUS_START_{placeholder_suffix} -->', f'<!-- STATUS_END_{placeholder_suffix} -->', status_icon)
-
-          with open(readme_path, 'w') as f:
-              f.write(content)
-          EOF
-
-          python3 update_readme.py
-
+          # Generate
+          python3 generate_readme.py
+          
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add README.md
-          git commit -m "Update ARB status for all variants" || echo "No changes to commit"
+          git add data/history/*.json README.md
+          git commit -m "Update ARB history and README" || echo "No changes to commit"
           git push

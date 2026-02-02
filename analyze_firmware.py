@@ -4,22 +4,17 @@ Analyze firmware zip to extract ARB index.
 Wraps payload-dumper-go and arbextract usage.
 """
 
-import sys
-import os
-import subprocess
-import glob
-import json
-import argparse
-import logging
-from pathlib import Path
+import shlex
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-logger = logging.getLogger(__name__)
+# ... (imports)
 
 def run_command(cmd, cwd=None):
-    logger.info(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    # Log valid shell-escaped command for reproducibility/safety
+    safe_cmd_str = ' '.join(shlex.quote(str(arg)) for arg in cmd)
+    logger.info(f"Running: {safe_cmd_str}")
+    
+    # shell=False is default but explicit is better for audit
+    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=False)
     if result.returncode != 0:
         logger.error(f"Command failed ({result.returncode}): {result.stderr}")
         return None
@@ -30,14 +25,16 @@ def analyze_firmware(zip_path, tools_dir, output_dir):
     tools_dir = Path(tools_dir).resolve()
     output_dir = Path(output_dir).resolve()
     
-    payload_dumper = tools_dir / "payload-dumper"
+    otaripper = tools_dir / "otaripper"
     arbextract = tools_dir / "arbextract"
     
     # 1. Extract xbl_config
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
         
-    cmd_extract = [str(payload_dumper), "-p", "xbl_config", "-o", str(output_dir), str(zip_path)]
+    # otaripper <zip> -p <partitions> -o <output>
+    # Add -n to prevent opening folder
+    cmd_extract = [str(otaripper), str(zip_path), "-p", "xbl_config", "-o", str(output_dir), "-n"]
     if not run_command(cmd_extract):
         return None
         

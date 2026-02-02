@@ -108,6 +108,8 @@ def generate_readme(history_data: Dict) -> str:
         '',
         'Automated ARB (Anti-Rollback) index tracker for OnePlus devices. This repository monitors firmware updates and tracks ARB changes over time.',
         '',
+        '**Website:** [https://bartixxx32.github.io/OnePlus-antirollchecker/](https://bartixxx32.github.io/OnePlus-antirollchecker/)',
+        '',
         '## 📊 Current Status',
         ''
     ]

@@ -15,8 +15,8 @@ concurrency:
 
 jobs:
   check-firmware:
-    # Trigger if (manual) OR (issue title starts with [CHECK] and body has a .zip link)
-    if: github.event_name == 'workflow_dispatch' || ((startsWith(github.event.issue.title, '[CHECK]') || contains(github.event.issue.labels.*.name, 'checker')) && contains(github.event.issue.body, '.zip'))
+    # Trigger if (manual) OR (issue title starts with [CHECK])
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.issue.title, '[CHECK]') || contains(github.event.issue.labels.*.name, 'checker')
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -45,9 +45,23 @@ jobs:
             echo "url=$URL" >> $GITHUB_OUTPUT
           fi
 
+      - name: Handle Missing URL (Issue)
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "❌ **Analysis Failed**
+          
+          No valid firmware URL found in the issue description. 
+          Please ensure your link ends with \`.zip\` and is publicly accessible.
+          
+          *Closing this request.*"
+          
+          gh issue close ${{ github.event.issue.number }} --reason "not_planned"
+
       - name: Initialize Issue (Label & Comment)
         id: init_issue
-        if: steps.setup.outputs.mode == 'issue'
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -61,13 +75,14 @@ jobs:
           echo "comment_id=$COMMENT_ID" >> $GITHUB_OUTPUT
 
       - name: Update Progress (Setup)
-        if: steps.setup.outputs.mode == 'issue' && success()
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url != '' && success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api -X PATCH "/repos/${{ github.repository }}/issues/comments/${{ steps.init_issue.outputs.comment_id }}" -f body=$'🤖 **Processing...**\n\n- [x] Setting up tools...\n- [/] Downloading firmware...\n- [ ] Analyzing ARB index...\n\n**URL**: `${{ steps.setup.outputs.url }}`'
 
       - name: Install dependencies & Setup Tools
+        if: steps.setup.outputs.url != ''
         run: |
           sudo apt-get update
           sudo apt-get install -y aria2 unzip curl python3-pip
@@ -81,11 +96,12 @@ jobs:
           chmod +x tools/otaripper
 
       - name: Download Firmware
+        if: steps.setup.outputs.url != ''
         run: |
           aria2c -x16 -s16 -k1M -o firmware.zip "${{ steps.setup.outputs.url }}"
 
       - name: Update Progress (Analysing)
-        if: steps.setup.outputs.mode == 'issue' && success()
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url != '' && success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -93,7 +109,7 @@ jobs:
 
       - name: Analyze Firmware
         id: analyze
-        if: hashFiles('firmware.zip') != ''
+        if: steps.setup.outputs.url != '' && hashFiles('firmware.zip') != ''
         run: |
           # This outputs result.json and also prints logs to stdout (visible in workflow logs)
           python3 analyze_firmware.py firmware.zip \
@@ -103,7 +119,7 @@ jobs:
             --json > result.json
 
       - name: Generate Final Report
-        if: always()
+        if: always() && steps.setup.outputs.url != ''
         shell: python
         env:
           ISSUE_USER: ${{ github.event.issue.user.login }}
@@ -163,7 +179,7 @@ jobs:
               json.dump(payload, f)
 
       - name: Post Final Result (Issue)
-        if: steps.setup.outputs.mode == 'issue' && always()
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url != '' && always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -172,11 +188,11 @@ jobs:
           fi
 
       - name: Wait before closing
-        if: steps.setup.outputs.mode == 'issue' && always()
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url != '' && always()
         run: sleep 180
 
       - name: Close Issue
-        if: steps.setup.outputs.mode == 'issue' && always()
+        if: steps.setup.outputs.mode == 'issue' && steps.setup.outputs.url != '' && always()
         run: |
           gh issue close ${{ github.event.issue.number }} --reason "completed"
         env:

@@ -49,8 +49,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NEW_BODY="🤖 **Processing...**\n\n- [x] Setting up tools...\n- [/] Downloading firmware...\n- [ ] Analyzing ARB index...\n\n**URL**: \`${{ steps.init.outputs.url }}\`"
-          gh api -X PATCH "/repos/${{ github.repository }}/issues/comments/${{ steps.init.outputs.comment_id }}" -f body="$NEW_BODY"
+          gh api -X PATCH "/repos/${{ github.repository }}/issues/comments/${{ steps.init.outputs.comment_id }}" -f body=$'🤖 **Processing...**\n\n- [x] Setting up tools...\n- [/] Downloading firmware...\n- [ ] Analyzing ARB index...\n\n**URL**: `${{ steps.init.outputs.url }}`'
 
       - name: Install dependencies & Setup Tools
         run: |
@@ -74,8 +73,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NEW_BODY="🤖 **Processing...**\n\n- [x] Setting up tools...\n- [x] Downloading firmware...\n- [/] Analyzing ARB index...\n\n**URL**: \`${{ steps.init.outputs.url }}\`"
-          gh api -X PATCH "/repos/${{ github.repository }}/issues/comments/${{ steps.init.outputs.comment_id }}" -f body="$NEW_BODY"
+          gh api -X PATCH "/repos/${{ github.repository }}/issues/comments/${{ steps.init.outputs.comment_id }}" -f body=$'🤖 **Processing...**\n\n- [x] Setting up tools...\n- [x] Downloading firmware...\n- [/] Analyzing ARB index...\n\n**URL**: `${{ steps.init.outputs.url }}`'
 
       - name: Analyze Firmware
         id: analyze

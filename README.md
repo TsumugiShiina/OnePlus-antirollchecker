@@ -174,11 +174,41 @@ Automated ARB (Anti-Rollback) index tracker for OnePlus devices. This repository
 
 ---
 
+### Oppo Find X5 Pro
+
+| Region | Model | Firmware Version | ARB Index | OEM Version | Last Checked | Safe |
+|--------|-------|------------------|-----------|-------------|--------------|------|
+| Europe | CPH2305 | CPH2305_15.0.0.1303(EX01) | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| EG | CPH2305 | CPH2305_11_A.19 | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| OCA | CPH2305 | CPH2305_11_A.22 | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| SG | CPH2305 | CPH2305_15.0.0.1301(EX01) | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| TW | CPH2305 | CPH2305_15.0.0.1301(EX01) | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+
+---
+
+### Oppo Find X5
+
+| Region | Model | Firmware Version | ARB Index | OEM Version | Last Checked | Safe |
+|--------|-------|------------------|-----------|-------------|--------------|------|
+| Europe | CPH2307 | CPH2307_15.0.0.1304(EX01) | **0** | Major: **0**,&nbsp;Minor: **120** | 2026-02-03 | ✅ |
+
+---
+
 ### Oppo Find X8 Ultra
 
 | Region | Model | Firmware Version | ARB Index | OEM Version | Last Checked | Safe |
 |--------|-------|------------------|-----------|-------------|--------------|------|
 | China | PKJ110 | PKJ110_16.0.3.500(CN01) | **0** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+
+---
+
+### Oppo Find N5
+
+| Region | Model | Firmware Version | ARB Index | OEM Version | Last Checked | Safe |
+|--------|-------|------------------|-----------|-------------|--------------|------|
+| China | PKV110 | PKH110_16.0.3.500(CN01) | **0** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| MY | CPH2671 | CPH2671_16.0.2.401(EX01) | **0** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| SG | CPH2671 | CPH2671_16.0.2.401(EX01) | **0** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
 
 ---
 
@@ -200,6 +230,15 @@ Automated ARB (Anti-Rollback) index tracker for OnePlus devices. This repository
 | Global | OPD2403 | OPD2403_16.0.3.501(EX01) | **1** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ❌ |
 | Europe | OPD2403 | OPD2403_16.0.3.501(EX01) | **1** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ❌ |
 | India | OPD2403 | OPD2403_16.0.3.501(EX01) | **1** | Major: **3**,&nbsp;Minor: **0** | 2026-02-03 | ❌ |
+
+---
+
+### Oppo Find N3
+
+| Region | Model | Firmware Version | ARB Index | OEM Version | Last Checked | Safe |
+|--------|-------|------------------|-----------|-------------|--------------|------|
+| ID | CPH2499 | CPH2499_16.0.3.500(EX01) | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
+| MY | CPH2499 | CPH2499_16.0.3.500(EX01) | **0** | Major: **2**,&nbsp;Minor: **0** | 2026-02-03 | ✅ |
 
 
 > [!IMPORTANT]

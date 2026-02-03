@@ -255,6 +255,22 @@ Automated ARB (Anti-Rollback) index tracker for OnePlus devices. This repository
 | SA | CPH2307 | CPH2307_15.0.0.1302(EX01) | **0** | Major: **0**,&nbsp;Minor: **120** | 2026-02-03 | ✅ |
 
 
+## 🤖 On-Demand ARB Checker
+
+Want to check a specific firmware instantly? Our automated bot can help!
+
+1. **[Click here to open a new Issue](https://github.com/Bartixxx32/OnePlus-antirollchecker/issues/new)**
+2. Set the title to `[CHECK] Your Title Here`
+3. Paste a direct link to the firmware `.zip` in the description
+4. Submit!
+
+The bot will automatically:
+- 📥 Download the firmware
+- 🔍 Extract metadata (Version, Model, Patch Level)
+- 🎯 Calculate the ARB index
+- 💬 Reply with a detailed report in 3-5 minutes
+
+
 > [!IMPORTANT]
 > This status is updated automatically by GitHub Actions. Some device/region combinations may not be available and will show as "Waiting for scan...".
 

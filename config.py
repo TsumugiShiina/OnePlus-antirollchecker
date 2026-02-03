@@ -204,9 +204,10 @@ DEVICE_METADATA: Dict[str, DeviceMeta] = {
     "Find X5": {
         "name": "Oppo Find X5",
         "models": {
-            "GLO": "CPH2307",
             "EU": "CPH2307",
-            "IN": "CPH2307",
+            "EG": "CPH2307",
+            "OCA": "CPH2307",
+            "SA": "CPH2307",
             "CN": "PFFM10"
         }
     },
@@ -222,6 +223,10 @@ DEVICE_METADATA: Dict[str, DeviceMeta] = {
         "models": {
             "SG": "CPH2671",
             "MY": "CPH2671",
+            "APC": "CPH2671",
+            "ID": "CPH2671",
+            "MX": "CPH2671",
+            "TH": "CPH2671",
             "CN": "PKV110"
         }
     },
@@ -248,7 +253,6 @@ DEVICE_METADATA: Dict[str, DeviceMeta] = {
         "name": "Oppo Find N3",
         "models": {
             "ID": "CPH2499",
-            "IN": "CPH2519",
             "MY": "CPH2499",
             "OCA": "CPH2499",
             "SG": "CPH2499",

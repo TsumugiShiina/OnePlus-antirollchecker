@@ -35,13 +35,17 @@ jobs:
           else
             echo "mode=issue" >> $GITHUB_OUTPUT
             # Extract URL from Issue Body
-            URL=$(python3 -c "
+            # Create temp script to handle extraction safely
+            # Use sed to strip leading whitespace so we can indent in YAML
+            cat << 'EOF' | sed 's/^[[:space:]]*//' > extract_url.py
             import re, os
-            body = '''${{ github.event.issue.body }}'''
-            links = re.findall(r'(https?://[^\s]+\.zip(?:[^\s\"\'\(\)\[\]]*)?)', body)
+            body = os.environ.get('ISSUE_BODY', '')
+            links = re.findall(r'(https?://[^\s]+\.zip(?:[^\s"\'\(\)\[\]]*)?)', body)
             if links:
                 print(links[0])
-            ")
+          EOF
+            URL=$(ISSUE_BODY="${{ github.event.issue.body }}" python3 extract_url.py)
+            rm extract_url.py
             echo "url=$URL" >> $GITHUB_OUTPUT
           fi
 

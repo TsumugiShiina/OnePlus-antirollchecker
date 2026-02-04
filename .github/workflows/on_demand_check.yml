@@ -41,8 +41,7 @@ jobs:
             import re, os
             body = os.environ.get('ISSUE_BODY', '')
             links = re.findall(r'(https?://[^\s]+\.zip(?:[^\s"\'\(\)\[\]]*)?)', body)
-            if links:
-                print(links[0])
+            if links: print(links[0])
           EOF
             URL=$(ISSUE_BODY="${{ github.event.issue.body }}" python3 extract_url.py)
             rm extract_url.py

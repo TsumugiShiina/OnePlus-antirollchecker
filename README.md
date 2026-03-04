@@ -20,25 +20,13 @@ Our Telegram bot allows you to check the Anti-Rollback (ARB) index of any OnePlu
 - **Bot Username:** [@oparbcheckerbot](https://t.me/oparbcheckerbot)
 - **Supported Commands:**
   - `/check <url>` - Analyze a firmware file (Direct Download Link required)
+  - `/download <device> [region]` - Fetch latest firmware & auto-check ARB
+  - `/devicestatus <device>` - Show current firmware & ARB info
+  - `/latest` - Show the 5 most recently discovered firmwares
   - `/help` - Show usage instructions
   - `/about` - Bot version and stats
 
 > **Note:** The bot is powered by GitHub Actions. Checks may take a minute to process.
-
-## 💬 Community & Support
-
-- **Group:** [@oneplusarbchecker](https://t.me/oneplusarbchecker)
-- **Discord:** [Join our Server](https://discord.gg/placeholder)
-
-> **Important:** The bot **only** works within this group to prevent spam and ensure availability. DM checks are disabled.
-
-## 📱 Android App
-
-Prefer a native mobile experience? We now have an official Android app available on F-Droid! Check firmware statuses, view ARB indices, and stay protected directly from your phone.
-
-[<img src="https://f-droid.org/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/packages/com.bartixxx.oneplusarbchecker/)
 
 ### 🍻 Support the Project
 If you find this tool helpful, consider buying me a beer! Your support keeps the updates coming.
@@ -1171,4 +1159,20 @@ This API helps you get direct, signed download URLs for OnePlus OTA firmware fil
 - **API for CN variants**: [roms.danielspringer.at](https://roms.danielspringer.at/) by Daniel Springer
 
 ---
-*Last updated: 2026-03-04 22:06 UTC*
+
+## 📱 Android App
+
+Prefer a native mobile experience? We have an official Android app on F-Droid! Check firmware statuses, view ARB indices, and stay protected directly from your phone.
+
+[<img src="https://f-droid.org/badge/get-it-on.png"
+    alt="Get it on F-Droid"
+    height="80">](https://f-droid.org/packages/com.bartixxx.oneplusarbchecker/)
+
+## 💬 Community & Support
+
+- **Telegram Group:** [@oneplusarbchecker](https://t.me/oneplusarbchecker)
+
+> **Important:** The bot **only** works within this group to prevent spam and ensure availability. DM checks are disabled.
+
+---
+*Last updated: 2026-03-04 22:16 UTC*

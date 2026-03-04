@@ -1,8 +1,17 @@
 # OnePlus Anti-Rollback (ARB) Checker
 
+<!-- Badges -->
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Bartixxx32/OnePlus-antirollchecker/check_arb.yml?style=flat-square&logo=github&label=ARB%20Checking)
+![GitHub stars](https://img.shields.io/github/stars/Bartixxx32/OnePlus-antirollchecker?style=flat-square&color=yellow)
+![GitHub forks](https://img.shields.io/github/forks/Bartixxx32/OnePlus-antirollchecker?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/Bartixxx32/OnePlus-antirollchecker?style=flat-square)
+![Python Version](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)
+![Views](https://visitor-badge.laobi.icu/badge?page_id=Bartixxx32.OnePlus-antirollchecker)
+---
+
 Automated ARB (Anti-Rollback) index tracker for OnePlus devices. This repository monitors firmware updates and tracks ARB changes over time.
 
-**🌐 Live Tracker:** [oneplusantiroll.netlify.app](https://oneplusantiroll.netlify.app/)
+**🌐 Website with stats:** [https://oneplusantiroll.netlify.app/](https://oneplusantiroll.netlify.app/)
 
 ## 🤖 OnePlus ARB Checker Bot
 
@@ -24,6 +33,11 @@ Join our Telegram group for support, discussion, and to use the bot.
 - **Discord:** [Join our Server](https://discord.gg/placeholder)
 
 > **Important:** The bot **only** works within this group to prevent spam and ensure availability. DM checks are disabled.
+
+### 🍻 Support the Project
+If you find this tool helpful, consider buying me a beer! Your support keeps the updates coming.
+
+<a href="https://www.buymeacoffee.com/bartixxx32"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=bartixxx32&button_colour=FFDD00&font_colour=000000&font_family=Comic&outline_colour=000000&coffee_colour=ffffff" /></a>
 
 ## 📊 Current Status
 
@@ -1133,7 +1147,7 @@ The bot will automatically pick up the request, analyze the firmware, and post t
 
 ---
 
-##  OOS Downloader API
+## 🌐 OOS Downloader API
 
 Need direct download URLs for OnePlus firmware? Use our **OOS Downloader API**!
 
@@ -1146,8 +1160,9 @@ This API helps you get direct, signed download URLs for OnePlus OTA firmware fil
 ## Credits
 
 - **Payload Extraction**: [otaripper](https://github.com/syedinsaf/otaripper) by syedinsaf
-- **Fallback Extraction**: [payload-dumper-go](https://github.com/ssut/payload-dumper-go) by ssut
+- **Playback & Validation**: [payload-dumper-go](https://github.com/ssut/payload-dumper-go) by ssut
 - **ARB Extraction**: [arbextract](https://github.com/koaaN/arbextract) by koaaN
+- **API for CN variants**: [roms.danielspringer.at](https://roms.danielspringer.at/) by Daniel Springer
 
 ---
-*Last updated: 2026-03-04 02:35 UTC*
+*Last updated: 2026-03-04 05:24 UTC*

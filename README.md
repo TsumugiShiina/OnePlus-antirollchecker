@@ -11,7 +11,7 @@
 
 Automated ARB (Anti-Rollback) index tracker for OnePlus devices. This repository monitors firmware updates and tracks ARB changes over time.
 
-**🌐 Website with stats:** [https://oneplusantiroll.netlify.app/](https://oneplusantiroll.netlify.app/)
+**🌐 ARB Info Website:** [https://oneplusantiroll.netlify.app/](https://oneplusantiroll.netlify.app/)
 
 ## 🤖 OnePlus ARB Checker Bot
 
@@ -1165,4 +1165,4 @@ This API helps you get direct, signed download URLs for OnePlus OTA firmware fil
 - **API for CN variants**: [roms.danielspringer.at](https://roms.danielspringer.at/) by Daniel Springer
 
 ---
-*Last updated: 2026-03-04 05:24 UTC*
+*Last updated: 2026-03-04 05:34 UTC*

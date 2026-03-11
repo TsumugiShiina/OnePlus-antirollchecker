@@ -1,13 +1,22 @@
 {
   "history": [
     {
+      "version": "PLK110_16.0.5.701(CN01)",
+      "arb": 0,
+      "major": 3,
+      "minor": 0,
+      "first_seen": "2026-03-11",
+      "last_checked": "2026-03-11",
+      "status": "current"
+    },
+    {
       "version": "PLK110_16.0.3.503(CN01)",
       "arb": 0,
       "major": 3,
       "minor": 0,
       "first_seen": "2026-02-04",
       "last_checked": "2026-03-10",
-      "status": "current"
+      "status": "archived"
     },
     {
       "version": "PLK110_16.0.2.402(CN01)",

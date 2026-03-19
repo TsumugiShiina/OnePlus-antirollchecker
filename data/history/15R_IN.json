@@ -1,13 +1,22 @@
 {
   "history": [
     {
+      "version": "CPH2767_16.0.5.701(EX01)",
+      "arb": 0,
+      "major": 3,
+      "minor": 0,
+      "first_seen": "2026-03-19",
+      "last_checked": "2026-03-19",
+      "status": "current"
+    },
+    {
       "version": "CPH2767_16.0.3.503(EX01)",
       "arb": 0,
       "major": 3,
       "minor": 0,
       "first_seen": "2026-02-10",
       "last_checked": "2026-03-18",
-      "status": "current"
+      "status": "archived"
     },
     {
       "version": "CPH2767_16.0.3.501(EX01)",

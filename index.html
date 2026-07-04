@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnePlus ARB Checker</title>
+    <meta name="description" content="OnePlus Anti-Rollback (ARB) index tracker.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bartixxx32.github.io/OnePlus-antirollchecker/">
+    <meta property="og:title" content="OnePlus ARB Checker">
+    <meta property="og:description"
+        content="Real-time Anti-Rollback (ARB) index tracking for OnePlus devices. Monitor firmware updates and protect your device.">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bartixxx32.github.io/OnePlus-antirollchecker/">
+    <meta property="twitter:title" content="OnePlus ARB Checker">
+    <meta property="twitter:description"
+        content="Real-time Anti-Rollback (ARB) index tracking for OnePlus devices. Monitor firmware updates and protect your device.">
+
+    <!-- Google Analytics -->
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7B8F6LHTVF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-7B8F6LHTVF');
+    </script>
+    
+
+    <!-- Favicon (SVG Data URI) -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23da3633'/><text x='50' y='70' font-family='Arial' font-size='60' font-weight='bold' fill='white' text-anchor='middle'>1+</text></svg>">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="cursor-glow" id="cursor-glow"></div>
+    <div class="background-wrapper">
+        <div class="background-glob"></div>
+        <div class="background-glob glob-2"></div>
+    </div>
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <h1>OnePlus ARB Checker</h1>
+            <p>Find firmware and ARB details for your device.</p>
+        </div>
+        <div class="topbar-search">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input type="text" id="search-input" placeholder="Search devices..." onkeyup="filterDevices()">
+            <span id="result-count" class="result-count"></span>
+        </div>
+        <div id="last-scan" class="topbar-info"></div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <main class="main">
+        <div class="grid" id="devices-grid">
+            <div class="skeleton-grid" id="skeleton-grid">
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-60"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-55"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-65"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-50"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-70"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-60"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-55"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-header"><div class="skeleton-line w-65"></div></div><div class="skeleton-body"><div class="skeleton-line w-90"></div><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div><div class="skeleton-line w-85"></div></div></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-cards">
+            <div class="footer-card">
+                <h3 style="color: #0088cc;">💬 Telegram Bot</h3>
+                <p>Check ARB directly from Telegram with real-time status updates.</p>
+                <p>
+                    <a href="https://t.me/oparbcheckerbot" target="_blank">@oparbcheckerbot</a>
+                    &bull;
+                    <a href="https://t.me/oneplusarbchecker" target="_blank">@oneplusarbchecker</a>
+                </p>
+            </div>
+            <div class="footer-card">
+                <h3 style="color: var(--accent);">🌐 OOS Downloader API</h3>
+                <p>Get direct, signed download URLs for OnePlus OTA firmware files by leveraging the <a href="https://play.google.com/store/apps/details?id=com.arjanvlek.oxygenupdater" target="_blank">OS Updater API</a>.</p>
+                <p><a href="https://oosdownloader-gui.fly.dev/" target="_blank">oosdownloader-gui.fly.dev</a></p>
+            </div>
+            <div class="footer-card" style="text-align:center;">
+                <h3 style="color: var(--accent);">📱 Android App</h3>
+                <p>Check ARB statuses directly from your phone.</p>
+                <a href="https://f-droid.org/packages/com.bartixxx.oneplusarbchecker/" target="_blank">
+                    <img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="44"
+                        style="border-radius: 6px; margin-top: 4px;">
+                </a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-links">
+                <a href="https://github.com/Bartixxx32/OnePlus-antirollchecker" class="footer-link" target="_blank">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                    PROJECT GITHUB
+                </a>
+                <a href="https://t.me/oneplusarbchecker" class="footer-link" target="_blank">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                    </svg>
+                    TELEGRAM CHANNEL
+                </a>
+                <a href="https://oosdownloader-gui.fly.dev/" class="footer-link" target="_blank">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                        <path
+                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                    OOS DOWNLOADER
+                </a>
+            </div>
+            <div class="footer-badges">
+                <img src="https://img.shields.io/github/actions/workflow/status/Bartixxx32/OnePlus-antirollchecker/check_arb.yml?style=flat-square&logo=github&label=ARB%20Checking"
+                    alt="Workflow Status">
+                <img src="https://img.shields.io/github/stars/Bartixxx32/OnePlus-antirollchecker?style=flat-square&color=yellow"
+                    alt="Stars">
+                <img src="https://img.shields.io/github/forks/Bartixxx32/OnePlus-antirollchecker?style=flat-square"
+                    alt="Forks">
+                <img src="https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python"
+                    alt="Python Version">
+                <img src="https://visitor-badge.laobi.icu/badge?page_id=Bartixxx32.OnePlus-antirollchecker" alt="Views">
+            </div>
+        </div>
+
+        <div class="footer-credits">
+            <p>
+                Payload Extraction by <a href="https://github.com/syedinsaf/otaripper" target="_blank">otaripper</a>
+                (syedinsaf)
+                &bull;
+                Extraction Fallback by <a href="https://github.com/ssut/payload-dumper-go" target="_blank">payload-dumper-go</a>
+                (ssut)
+                &bull;
+                ARB Extraction by <a href="https://github.com/koaaN/arbextract" target="_blank">arbextract</a> (koaaN)
+                &bull;
+                CN API by <a href="https://roms.danielspringer.at/" target="_blank">roms.danielspringer.at</a> (Daniel
+                Springer)
+                &bull;
+                API powered by <a href="https://play.google.com/store/apps/details?id=com.arjanvlek.oxygenupdater" target="_blank">OS Updater</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Floating BMC -->
+    <a href="https://www.buymeacoffee.com/bartixxx32" target="_blank" class="floating-bmc">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20beer&emoji=🍺&slug=bartixxx32&button_colour=FFDD00&font_colour=000000&font_family=Comic&outline_colour=000000&coffee_colour=ffffff"
+            alt="Buy Me A Coffee">
+    </a>
+
+    <script>
+        // Canonical mapping injected from config.py via Jinja
+        const regionMap = {"GLO": "Global", "GLB": "Global", "IN": "India", "EU": "Europe", "EEA": "Europe", "NA": "North America", "US": "United States", "CN": "China", "SG": "Singapore", "MY": "Malaysia", "TW": "Taiwan", "ID": "Indonesia", "VN": "Vietnam", "APC": "Asia Pacific", "OCA": "Oceania", "EG": "Egypt", "SA": "Saudi Arabia", "MX": "Mexico", "VISIBLE": "Visible USA", "TH": "Thailand", "PH": "Philippines", "MEA": "Middle East"};
+    </script>
+    <script src="js/script.js"></script>
+</body>
+
+</html>

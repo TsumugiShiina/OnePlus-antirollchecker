@@ -1,0 +1,481 @@
+/**
+ * Scroll to a card using native smooth scroll + scroll-margin-top for offset.
+ */
+function scrollToCard(el) {
+    const target = typeof el === 'string' ? document.getElementById(el) : el;
+    if (target) {
+        const topbar = document.querySelector('.topbar');
+        if (topbar) topbar.classList.remove('hidden');
+        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        target.classList.add('highlight-card');
+    }
+}
+
+/**
+ * Toggle visibility of version history row.
+ */
+function toggleHistory(id, btn) {
+    const row = document.getElementById(id);
+    if (row.classList.contains('active')) {
+        row.classList.remove('active');
+        btn.classList.remove('active');
+    } else {
+        row.classList.add('active');
+        btn.classList.add('active');
+    }
+}
+
+/**
+ * Copy a shareable link to this device card to clipboard.
+ */
+function copyCardLink(id, deviceName) {
+    const url = new URL(window.location.origin + window.location.pathname);
+    url.hash = id;
+    navigator.clipboard.writeText(url.toString()).then(() => {
+        const btn = document.querySelector(`[onclick*="copyCardLink('${id}'"]`) || document.querySelector(`#${id} .btn-share`);
+        if (btn) {
+            const orig = btn.textContent;
+            btn.textContent = '✓';
+            setTimeout(() => btn.textContent = orig, 1500);
+        }
+    }).catch(() => {});
+}
+
+/**
+ * Filter and sort device cards based on search input.
+ */
+function filterDevices() {
+    const filter = document.getElementById('search-input').value.toLowerCase();
+    const grid = document.getElementById('devices-grid');
+    const cards = Array.from(document.querySelectorAll('.card'));
+    let visibleCount = 0;
+
+    const scored = cards.map(card => {
+        const name = (card.getAttribute('data-name') || '').toLowerCase();
+        let score = 0;
+        if (!filter) score = 1;
+        else if (name === filter) score = 100;
+        else if (name.startsWith(filter)) score = 50;
+        else if (name.includes(filter)) score = 10;
+        return { card, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    scored.forEach(({ card, score }) => {
+        if (score > 0) {
+            card.style.display = '';
+            grid.appendChild(card);
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    const total = cards.length;
+    const el = document.getElementById('result-count');
+    if (el) {
+        el.textContent = filter ? `${visibleCount}/${total}` : '';
+    }
+
+    // Update URL with search query
+    const params = new URLSearchParams(window.location.search);
+    if (filter) {
+        params.set('search', filter);
+    } else {
+        params.delete('search');
+    }
+    const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+
+    // Scroll to first visible card if it's outside the viewport
+    if (filter && visibleCount > 0) {
+        const topbar = document.querySelector('.topbar');
+        if (topbar) topbar.classList.remove('hidden');
+        const firstCard = document.querySelector('.card[style*="display: block"], .card:not([style*="display: none"])');
+        if (firstCard) {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const offset = topbar ? topbar.offsetHeight + 32 : 120;
+                    const rect = firstCard.getBoundingClientRect();
+                    if (rect.top < offset || rect.bottom > window.innerHeight) {
+                        window.scrollTo({ top: rect.top + window.scrollY - offset, behavior: 'smooth' });
+                    }
+                });
+            });
+        }
+    }
+}
+
+/**
+ * Extract numeric parts from version string for correct ordering.
+ * Note: Keep this in sync with version_sort_key() in hardcode_rules.py.
+ */
+const versionSortKey = (v) => {
+    if (!v) return [0];
+    const parts = v.match(/\d+/g);
+    return parts ? parts.map(Number) : [0];
+};
+
+/**
+ * Compare two version strings.
+ */
+const compareVersions = (a, b) => {
+    const ka = versionSortKey(a);
+    const kb = versionSortKey(b);
+    for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+        const na = ka[i] || 0;
+        const nb = kb[i] || 0;
+        if (na !== nb) return na - nb;
+    }
+    return 0;
+};
+
+/**
+ * Map compact region codes to human-readable labels for display.
+ * Uses the globally defined `regionMap`.
+ */
+const getRegionName = (code) => {
+    return (typeof regionMap !== 'undefined' && regionMap[code]) ? regionMap[code] : code;
+};
+
+/**
+ * Render status badge based on ARB value.
+ */
+const renderBadge = (v) => {
+    if (v.is_hardcoded) return `<span class="badge badge-hardcode" title="Anti-rollback is present but undetectable by standard tools"><span class="badge-dot"></span>Undetectable ARB</span>`;
+    if (v.arb === 0) return `<span class="badge badge-safe"><span class="badge-dot"></span>Safe</span>`;
+    if (typeof v.arb === 'number' && v.arb > 0) return `<span class="badge badge-danger"><span class="badge-dot"></span>Protected</span>`;
+    return `<span class="badge badge-warning"><span class="badge-dot"></span>Unknown</span>`;
+};
+
+/**
+ * Render the HTML for the device list.
+ */
+const renderHTML = (devices) => {
+    return devices.map(device => {
+        let rows = '';
+        if (device.variants.length === 0) {
+            rows = `<tr><td colspan="4" style="text-align:center; padding:20px; color: var(--text-dim);">No data available</td></tr>`;
+        } else {
+            device.variants.forEach(variant => {
+                const regionFull = getRegionName(variant.region_name);
+                const regionShort = variant.region_name;
+
+                const hasHistory = variant.history && variant.history.length > 0;
+                const histId = `history-${device.id}-${variant.region_name.replace(/\s+/g, '-')}`;
+
+                rows += `
+                <tr>
+                    <td class="col-region">
+                        <span class="region-full">${regionFull}</span>
+                        <span class="region-short">${regionShort}</span>
+                        <div class="region-model-sub">${variant.model || ''}</div>
+                    </td>
+                    <td>
+                        <div class="firmware-title-wrap">
+                            <div class="firmware-title">${variant.version || 'Unknown'}</div>
+                        </div>
+                        <div class="firmware-oem">Major: ${variant.major != null ? variant.major : '?'}, Minor: ${variant.minor != null ? variant.minor : '?'}</div>
+                        ${variant.md5 ? `<details class="md5-details"><summary>Show MD5</summary><code>${variant.md5}</code></details>` : ''}
+                    </td>
+                    <td>
+                        ${renderBadge(variant)}
+                        <span class="arb-sub">ARB: ${variant.is_hardcoded ? '?' : (variant.arb != null ? variant.arb : '?')}</span>
+                        <div class="last-checked-sub">${variant.last_checked || variant.first_seen || 'Unknown'}</div>
+                    </td>
+                    <td>
+                        ${hasHistory ? `<button class="btn-history" onclick="toggleHistory('${histId}', this)">History <span class="btn-history-arrow">›</span></button>` : ''}
+                    </td>
+                </tr>
+                `;
+
+                if (hasHistory) {
+                    let histRows = variant.history.map(entry => `
+                        <tr>
+                            <td>
+                                <div class="firmware-title-wrap">
+                                    <div class="firmware-title" style="font-size:0.75rem;">${entry.version}</div>
+                                </div>
+                                <div class="firmware-oem">Major: ${entry.major != null ? entry.major : '?'}, Minor: ${entry.minor != null ? entry.minor : '?'}</div>
+                                ${entry.md5 ? `<details class="md5-details"><summary>Show MD5</summary><code>${entry.md5}</code></details>` : ''}
+                            </td>
+                            <td>
+                                ${renderBadge(entry)}
+                                <span class="arb-sub">ARB: ${entry.is_hardcoded ? '?' : (entry.arb != null ? entry.arb : '?')}</span>
+                            </td>
+                            <td><span class="history-last-seen">${entry.last_checked || entry.first_seen || 'Unknown'}</span></td>
+                        </tr>
+                    `).join('');
+
+                    rows += `
+                    <tr id="${histId}" class="history-row">
+                        <td colspan="4" style="padding:0; overflow: visible;">
+                            <div class="history-container">
+                                <div class="history-title">📜 Version History — ${variant.region_name}</div>
+                                <table class="history-table">
+                                    <thead><tr><th>Firmware Version</th><th>Status</th><th>Last Seen</th></tr></thead>
+                                    <tbody>${histRows}</tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }
+            });
+        }
+
+        return `
+        <div class="card" id="card-${device.id}" data-name="${device.name.toLowerCase()} ${device.models.join(' ').toLowerCase()}" style="scroll-margin-top:120px">
+            <div class="card-header">
+                <h2>
+                    ${device.name}
+                    <span class="device-models">${device.models.join(' / ')}</span>
+                </h2>
+                <button class="btn-share" onclick="copyCardLink('card-${device.id}','${device.name.replace(/'/g, "\\'")}')" title="Copy link to this device">🔗</button>
+            </div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-region">Region</th>
+                            <th class="col-firmware">Firmware</th>
+                            <th class="col-status">Status</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        `;
+    }).join('');
+};
+
+/**
+ * Main data loading function.
+ */
+async function loadData() {
+    const grid = document.getElementById('devices-grid');
+    let db;
+    const cacheKey = 'oparb_db';
+    const cacheTTL = 5 * 60 * 1000; // 5 minutes
+
+    // Check localStorage cache first
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        try {
+            const { data, ts } = JSON.parse(cached);
+            if (Date.now() - ts < cacheTTL) {
+                db = data;
+            }
+        } catch (_) { localStorage.removeItem(cacheKey); }
+    }
+
+    if (!db) {
+        try {
+            const res = await fetch('./database.json');
+            if (!res.ok) throw new Error();
+            db = await res.json();
+            localStorage.setItem(cacheKey, JSON.stringify({ data: db, ts: Date.now() }));
+        } catch (e1) {
+            try {
+                const res = await fetch('https://oparb.pages.dev/database.json');
+                db = await res.json();
+                localStorage.setItem(cacheKey, JSON.stringify({ data: db, ts: Date.now() }));
+            } catch (e2) {
+                // If fetch fails, use stale cache as fallback
+                if (cached) {
+                    try { db = JSON.parse(cached).data; } catch (_) {}
+                }
+                if (!db) {
+                    grid.innerHTML = `
+                        <div style="grid-column:1/-1; text-align:center; padding:40px;">
+                            <p style="color:var(--danger); margin-bottom:16px;">❌ Failed to load database. Check your network or CORS settings.</p>
+                            <button onclick="loadData()" style="background:var(--accent); color:#000; border:none; padding:8px 20px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem;">🔄 Retry</button>
+                        </div>`;
+                    return;
+                }
+            }
+        }
+    }
+
+    // Remove skeleton
+    const skeleton = document.getElementById('skeleton-grid');
+    if (skeleton) skeleton.remove();
+
+    // Process db into devices array
+    const byDevice = {};
+    let latestScan = '';
+
+    const regionScores = { "GLO": 1, "EU": 2, "IN": 3, "NA": 4, "CN": 5 };
+
+    for (const modelKey of Object.keys(db)) {
+        const d = db[modelKey];
+        const devName = d.device_name;
+        if (!byDevice[devName]) {
+            byDevice[devName] = {
+                name: devName,
+                id: devName.replace(/\s+/g, '-'),
+                order: d.device_order ?? 999,
+                variantsMap: {},
+                models: [] 
+            };
+        }
+        if (!byDevice[devName].models.includes(modelKey)) {
+            byDevice[devName].models.push(modelKey);
+        }
+
+        for (const [versionStr, v] of Object.entries(d.versions)) {
+            const vWithKey = { ...v, version: versionStr };
+            if (vWithKey.last_checked && vWithKey.last_checked > latestScan) latestScan = vWithKey.last_checked;
+
+            for (const r of vWithKey.regions || []) {
+                if (!byDevice[devName].variantsMap[r]) {
+                    byDevice[devName].variantsMap[r] = { region_name: r, model: modelKey, history: [], regions: [] };
+                }
+                if (!byDevice[devName].variantsMap[r].model) byDevice[devName].variantsMap[r].model = modelKey;
+                const vr = byDevice[devName].variantsMap[r];
+
+                if (!vr.regions.includes(r)) {
+                    vr.regions.push(r);
+                }
+
+                if (vWithKey.status === 'current' || !vr.version) {
+                    vr.version = vWithKey.version;
+                    vr.arb = vWithKey.arb;
+                    vr.md5 = vWithKey.md5;
+                    vr.major = vWithKey.major;
+                    vr.minor = vWithKey.minor;
+                    vr.is_hardcoded = vWithKey.is_hardcoded;
+                    vr.last_checked = vWithKey.last_checked;
+                    vr.first_seen = vWithKey.first_seen;
+                    if (vWithKey.status !== 'current') {
+                        vr.history.push(vWithKey);
+                    }
+                } else {
+                    vr.history.push(vWithKey);
+                }
+            }
+        }
+    }
+
+    const lastScanEl = document.getElementById('last-scan');
+    if (lastScanEl) lastScanEl.innerText = '📅 ' + (latestScan || new Date().toISOString().split('T')[0]);
+
+    const sortedDevices = Object.values(byDevice).sort((a, b) => a.order - b.order);
+    for (const dev of sortedDevices) {
+        dev.variants = Object.values(dev.variantsMap).sort((a, b) => (regionScores[a.region_name] || 99) - (regionScores[b.region_name] || 99));
+        for (const v of dev.variants) {
+            v.history.sort((a, b) => compareVersions(b.version, a.version));
+        }
+    }
+
+    grid.innerHTML = renderHTML(sortedDevices);
+
+    // Initialize result count
+    const totalCards = document.querySelectorAll('.card').length;
+    const countEl = document.getElementById('result-count');
+    if (countEl && totalCards > 0) countEl.textContent = `${totalCards} devices`;
+
+    // Deep link: ?search= or ?device=
+    const params = new URLSearchParams(window.location.search);
+    const searchQuery = params.get('search') || params.get('device');
+    if (searchQuery) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = searchQuery;
+            filterDevices();
+            // Scroll to first visible card with topbar offset
+            setTimeout(() => {
+                const topbar = document.querySelector('.topbar');
+                if (topbar) topbar.classList.remove('hidden');
+                const firstVisible = document.querySelector('.card[style*="display: block"], .card:not([style*="display: none"])');
+                if (firstVisible) {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            const offset = topbar ? topbar.offsetHeight + 32 : 120;
+                            window.scrollTo({ top: firstVisible.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+                        });
+                    });
+                }
+            }, 150);
+        }
+    }
+
+    // Set scroll-margin-top on all cards so browser native #hash scroll respects topbar
+    const topbar = document.querySelector('.topbar');
+    const scrollMargin = topbar ? topbar.offsetHeight + 32 : 120;
+    document.querySelectorAll('.card').forEach(card => {
+        card.style.scrollMarginTop = scrollMargin + 'px';
+    });
+
+    // Deep link by hash (#card-DeviceName)
+    if (window.location.hash) {
+        setTimeout(() => {
+            scrollToCard(window.location.hash.substring(1));
+        }, 100);
+    }
+}
+
+// Cursor Glow Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const glow = document.getElementById('cursor-glow');
+    if (glow) {
+        const updateGlow = (x, y) => {
+            requestAnimationFrame(() => {
+                glow.style.setProperty('--x', `${x}px`);
+                glow.style.setProperty('--y', `${y}px`);
+                glow.style.opacity = '1';
+            });
+        };
+
+        document.addEventListener('mousemove', (e) => updateGlow(e.clientX, e.clientY));
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                updateGlow(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        });
+        document.addEventListener('touchend', () => {
+            glow.style.opacity = '0';
+        });
+    }
+
+    // Hide topbar on scroll down, show on scroll up
+    const topbar = document.querySelector('.topbar');
+    if (topbar) {
+        let lastScrollY = window.scrollY;
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    const current = window.scrollY;
+                    if (current > 80 && current > lastScrollY) {
+                        topbar.classList.add('hidden');
+                    } else {
+                        topbar.classList.remove('hidden');
+                    }
+                    lastScrollY = current;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+        // Show topbar when search input is focused
+        document.getElementById('search-input')?.addEventListener('focus', () => {
+            topbar.classList.remove('hidden');
+        });
+    }
+    
+    // Initial data load
+    loadData();
+});
+
+// pageshow fires on bfcache restore (e.g. Enter in URL bar on same tab)
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted && window.location.hash) {
+        scrollToCard(window.location.hash.substring(1));
+    }
+});

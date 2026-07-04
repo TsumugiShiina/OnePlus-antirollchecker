@@ -1,0 +1,40 @@
+{
+  "_schema": {
+    "alerts": [
+      {
+        "id": "unique_alert_id",
+        "type": "info | warning | danger",
+        "title": "Short alert title",
+        "message": "Full alert message displayed in the app",
+        "device": "all | CPH2747 | CPH2653 | ... (model number from database.json keys)",
+        "display": "banner | notification | (omit for both)"
+      }
+    ]
+  },
+  "alerts": [
+    {
+      "id": "alert_20260627_000533",
+      "type": "warning",
+      "title": "test",
+      "message": "test2",
+      "device": "all",
+      "display": "notification"
+    },
+    {
+      "id": "alert_20260627_000652",
+      "type": "warning",
+      "title": "teetet",
+      "message": "teetete",
+      "device": "all",
+      "display": "notification"
+    },
+    {
+      "id": "alert_20260627_001253",
+      "type": "danger",
+      "title": "test",
+      "message": "testtest",
+      "device": "all",
+      "display": "notification"
+    }
+  ]
+}
